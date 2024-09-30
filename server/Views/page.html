@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="{{ url_for('static', filename='knockout-3.5.1.js') }}"></script>
+
+    <script>
+        var jsonData;
+        var post = {{ post | tojson }};
+        var element = document.createElement('div');
+        element.innerHTML = post;
+        var decodedDataString = element.textContent;
+
+        jsonData = JSON.parse(decodedDataString);
+        jsonData.comments = ko.observableArray(jsonData.comments);
+        document.title = jsonData.post.header
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='resources.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='page_style.css') }}">
+
+    <script src="{{ url_for('static', filename='jquery.js') }}"></script>
+    <script src="{{ url_for('static', filename='temp.js') }}"></script>
+</head>
+<body>
+    <div class="navigation-bar">
+        <a href="../index" class="navigation-bar-name"> <img class="navigation-bar-img image-4" style="margin-left: 0%;">PostHub</a>
+    </div>
+    <!-- ko using: jsonData.post -->
+    <div class="content-block">
+        <div class="main-left">
+            <div class="page-main-block">
+                <div class="page-main-info">
+                    <h2 class="page-main-title" data-bind="text: header">
+                    </h2>
+                    <div class="page-main-author">
+                        <span data-bind="text: 'Автор: ' + user_nickname"></span>
+                        <span style="margin-left: 10px" data-bind="text: new Date(date).toLocaleString()"></span>
+                    </div>
+                </div>
+                <div class="page-main-content" data-bind="text: main_text">
+                </div>
+                <!--<div class="page-main-statistic">
+                    <button class="page-main-button-reaction like" data-bind="
+                    click: function() {
+                        likes = likes + 1;
+                    }">🖒</button>
+                    <span style="font-size: 40px; user-select: none;">/</span>
+                    <button class="page-main-button-reaction dislike" data-bind="
+                    click: function() {
+                        dislikes = dislikes - 1;
+                    }">🖓</button>
+                    <span class="page-main-reaction-count" data-bind="
+                        text: likes-dislikes,
+                        style: { 'color': likes-dislikes == 0 ? 'black' : likes-dislikes > 0 ? 'green' : 'red' }
+                    ">
+                    </span>
+                </div>-->
+                <div class="page-main-comments">
+                    <div class="page-main-comments-title">
+                        <span>Комментарии</span>
+                        <span data-bind="text: '(' + jsonData.comments.length + ')'"></span>
+                    </div>
+                    <form id="commentForm" class="page-main-comments-new-comment">
+                        <input name="username" class="page-main-comments-username" required placeholder="Имя" data-bind="value: parametersForComment.username" />
+                        <textarea name="main_text" contenteditable class="page-main-comments-new-comment-input" required placeholder="Текст" data-bind="value: parametersForComment.main_text"></textarea>
+                        <br>
+                        <button type="submit" method="post" class="page-main-comments-send">Отправить сообщение</button>
+                    </form>
+
+                    <div class="page-main-all-comments" data-bind="foreach: jsonData.comments">
+                        <div class="page-main-comment">
+                            <div class="page-main-comment-info">
+                                <span data-bind="text: nickname"></span>
+                                <span data-bind="text: new Date(date).toLocaleString()"></span>
+                            </div>
+                            <div class="page-main-comment-text">
+                                <span data-bind="text: text"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-right">
+            <div class="content-right">
+                <img class="content-image image-2" />
+                <div class="content-text">
+                    <b>
+                        Здесь будет какая-то информация
+                    </b>
+                    <span>
+                        А здесь что-то поменьше
+                    </span>
+                </div>
+            </div>
+            <div class="content-right">
+                <img class="content-image image-1" />
+                <div class="content-text">
+                    <b>
+                        Реклама
+                    </b>
+                    <span>
+                        Ещё что-то о рекламе
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /ko -->
+
+    <script>
+        self.parametersForComment = {
+            username: ko.observable(""),
+            main_text: ko.observable(""),
+            date: ko.observable()
+        }
+
+        document.getElementById('commentForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            $.ajax({
+                url: window.location.origin + '/sendComment',
+                type: 'post',
+                data: {
+                    post_id: jsonData.post.post_id,
+                    username: self.parametersForComment.username(),
+                    main_text:  self.parametersForComment.main_text(),
+                    date: (new Date()).getTime()
+                }
+            }).done((response) => {
+                jsonData.comments(response)
+            })
+        });
+    </script>
+</body>
+</html>
